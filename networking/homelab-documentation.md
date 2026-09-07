@@ -56,13 +56,34 @@
 
 ---
 
-## 5. Wireless Infrastructure (MikroTik hAP ax²)
+## 5. Power Delivery & Infrastructure Resilience
+
+Critical network hardware, workstation peripherals, and media gear are backed up by a central uninterruptible power supply (UPS) to guarantee clean power delivery (Pure Sine Wave) and prevent sudden dropouts during brownouts or grid failures:
+
+- **UPS Unit:** CyberPower CP900EPFCLCD (Line-Interactive, Pure Sine Wave)
+- **Rated Capacity:** 900VA / 540W
+- **Connected Equipment:**
+  - **Core Networking:**
+    - Cosmote ONT/Modem (WAN Demarcation)
+    - MikroTik hEX S (Router/Gateway)
+    - TP-Link ES208GP (Managed Distribution Switch)
+    - MikroTik hAP ax² (Access Point - via 24V DC Wall Adapter)
+  - **Workstation & Peripherals:**
+    - Admin MacBook Pro Charger (67W/96W USB-C PD)
+    - Samsung 42" Smart TV
+- **Estimated Runtime:**
+  - Full Active Load (~140W - TV running & Mac charging): **~18–25 minutes**
+  - Network-Only / Idle Load (~40W - TV & Charger standby/off): **~55–70 minutes**
+
+  ---
+
+## 6. Wireless Infrastructure (MikroTik hAP ax²)
 
 ### Physical Connectivity & Mode
 - **Mode:** Access Point / L2 Bridge (All routing/DHCP offloaded to hEX S)
 - **Management IP:** 10.10.10.3/27
 - **Uplink Interface:** ether1 (802.1Q Trunk connected to TP-Link Switch Port 8)
-- **Power Source:** Passive PoE 24V
+- **Power Source:** 24V DC Power Adapter
 
 ### SSID to VLAN Mapping Matrix
 
@@ -81,7 +102,7 @@
 
 ---
 
-## 6. Logical Addressing & IPAM Schema (Layer 3)
+## 7. Logical Addressing & IPAM Schema (Layer 3)
 
 | VLAN ID | Subnet Name | Subnet / CIDR  | Default Gateway | Usable Host Range | DHCP Pool Range          | Role / Description                    |
 | :------ | :---------- | :------------- | :-------------- | :---------------- | :----------------------- | :------------------------------------ |
@@ -102,7 +123,7 @@
 
 ---
 
-## 7. Network Services & DNS Architecture
+## 8. Network Services & DNS Architecture
 
 ### Core Services Matrix
 
@@ -139,7 +160,7 @@
 
 ---
 
-## 8. Security Policy & Inter-VLAN Firewall Matrix
+## 9. Security Policy & Inter-VLAN Firewall Matrix
 
 ### Forwarding Access Policy
 
