@@ -164,25 +164,27 @@ Critical network hardware, workstation peripherals, and media gear are backed up
 
 ### Forwarding Access Policy
 
-| Source VLAN         | Destination VLAN  | Allowed Traffic / Ports                    | Action     | Business Justification / Purpose                      |
-| :------------------ | :---------------- | :----------------------------------------- | :--------- | :---------------------------------------------------- |
-| **VLAN 10 (MGMT)**  | ALL VLANs & WAN   | ANY / ALL                                  | **ACCEPT** | Full Administrative Access across all segments        |
-| **VLAN 20 (MAIN)**  | VLAN 10 (MGMT)    | Selected Ports (WinBox, SSH, Web, Proxmox) | **ACCEPT** | Daily Admin Management (Restricted to Admin Mac's ip) |
-| **VLAN 20 (MAIN)**  | VLAN 30 (IOT)     | AirPlay, Cast, Media Streaming             | **ACCEPT** | Local control of Smart TV and IoT endpoints           |
-| **VLAN 20 (MAIN)**  | VLAN 40 (LAB)     | SSH, HTTP/S, Testing Ports                 | **ACCEPT** | Lab testing & VM management                           |
-| **VLAN 20 (MAIN)**  | WAN (Internet)    | HTTP/S, DNS, Standard Outbound             | **ACCEPT** | Production Internet Access                            |
-| **VLAN 30 (IOT)**   | WAN (Internet)    | Outbound NTP, Cloud Telemetry              | **ACCEPT** | Firmware updates & vendor cloud services              |
-| **VLAN 30 (IOT)**   | Any Internal VLAN | None (Established/Related only)            | **DROP**   | Strict IoT quarantine                                 |
-| **VLAN 40 (LAB)**   | WAN (Internet)    | Package Repos, Updates                     | **ACCEPT** | Linux package management                              |
-| **VLAN 50 (GUEST)** | WAN (Internet)    | Web Browsing (80, 443), DNS (53)           | **ACCEPT** | Guest internet access only                            |
-| **VLAN 50 (GUEST)** | Any Internal VLAN | NONE                                       | **DROP**   | Total guest isolation from private resources          |
-| **ANY**             | ANY               | Unmatched Traffic                          | **DROP**   | Implicit Default Drop Policy (Zero-Trust baseline)    |
+| Source VLAN | Destination VLAN | Allowed Traffic / Ports | Action | Business Justification / Purpose |
+| :--- | :--- | :--- | :--- | :--- |
+| **VLAN 10 (MGMT)** | ALL VLANs & WAN | ANY / ALL | **ACCEPT** | Full Administrative Access across all segments |
+| **VLAN 20 (MAIN)** | ALL VLANs | ANY / ALL | **ACCEPT** | Daily Admin Management (Restricted to Admin Mac's ip 10.10.20.10) |
+| **wireguard-vpn** | ALL VLANs & WAN | ANY / ALL | **ACCEPT** | Secure remote administrative access via VPN tunnel |
+| **INTERNAL_VLANS** | Pi-hole (10.10.10.5) | DNS (UDP/TCP 53) | **ACCEPT** | Direct internal resolution to dedicated DNS sinkhole |
+| **VLAN 20 (MAIN)** | WAN (Internet) | HTTP/S, DNS, Standard Outbound | **ACCEPT** | Production Internet Access |
+| **VLAN 30 (IOT)** | WAN (Internet) | Outbound NTP, Cloud Telemetry | **ACCEPT** | Firmware updates & vendor cloud services |
+| **VLAN 30 (IOT)** | Any Internal VLAN | None (Established/Related only) | **DROP** | Strict IoT quarantine |
+| **VLAN 40 (LAB)** | WAN (Internet) | Package Repos, Updates | **ACCEPT** | Linux package management |
+| **VLAN 40 (LAB)** | Any Internal VLAN | NONE | **DROP** | Quarantine lab environment from production subnets |
+| **VLAN 50 (GUEST)** | WAN (Internet) | Web Browsing (80, 443), DNS (53) | **ACCEPT** | Guest internet access only |
+| **VLAN 50 (GUEST)** | Any Internal VLAN | NONE | **DROP** | Total guest isolation from private resources |
+| **ANY** | ANY | Unmatched Traffic | **DROP** | Implicit Default Drop Policy (Zero-Trust baseline) |
 
 ### Router Ingress Protection (Input Chain)
 
 - **Drop Invalid:** Immediately discards all malformed, corrupted, or out-of-sequence packets (invalid state).
-- **DNS Interception:** Allows DNS queries (ports 53 UDP/TCP) to the router exclusively from authorized internal networks (`VLANS` list).
-- **Management Access:** Administrative access to RouterOS (WinBox, SSH, WebFig) is strictly restricted to `VLAN10_MGMT` and authorized IPs within `VLAN20_MAIN`.
+- **DHCP Ingress:** Allows UDP port 67 from `INTERNAL_VLANS` to facilitate IP address allocation from local DHCP pools.
+- **DNS Interception:** Allows DNS queries (ports 53 UDP/TCP) to the router exclusively from authorized internal networks (`INTERNAL_VLANS` list).
+- **Management Access:** Administrative access to RouterOS (WinBox, SSH, WebFig) is strictly restricted to `VLAN10_MGMT`, authorized IP `10.10.20.10` within `VLAN20_MAIN`, and the `wireguard-vpn` interface.
 - **VPN Ingress:** Opens only port `UDP 13231` on the WAN interface to terminate incoming WireGuard tunnels.
 - **Drop All Other:** Enforces a Zero-Trust default policy by dropping any incoming host-bound packet that does not match an explicit allow rule.
 
