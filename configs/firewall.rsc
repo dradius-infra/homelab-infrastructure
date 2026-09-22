@@ -4,7 +4,7 @@
 
 add action=accept chain=input comment="Accept established, related, untracked" connection-state=established,related,untracked
 add action=drop chain=input comment="Drop invalid packets" connection-state=invalid
-add action=accept chain=input comment="Allow ping from internal networks only" in-interface-list=INTERNAL_VLANS protocol=icmp
+add action=accept chain=input comment="Allow ping with rate limit" protocol=icmp limit=10,5:packet
 add action=accept chain=input comment="Allow WireGuard VPN Handshake" dst-port=<VPN_LISTEN_PORT> protocol=udp
 add action=accept chain=input comment="Allow authorized VPN client to manage router" in-interface=wireguard-vpn src-address=10.10.99.2
 add action=accept chain=input comment="Allow DHCP requests from VLANs" dst-port=67 in-interface-list=INTERNAL_VLANS protocol=udp
