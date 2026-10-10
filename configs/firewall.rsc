@@ -41,6 +41,7 @@ add action=accept chain=forward comment="Allow MAIN subnet ICMP to Proxmox Host"
 add action=accept chain=forward comment="Allow MAIN subnet to Proxmox Services" dst-address=10.10.10.4 dst-port=<PROXMOX_SERVICES_PORTS> in-interface-list=INTERNAL_VLANS out-interface=VLAN10_MGMT protocol=tcp src-address=10.10.20.0/26
 add action=accept chain=forward comment="Allow Admin Workstation ICMP to LAB" in-interface=VLAN20_MAIN out-interface=VLAN40_LAB protocol=icmp src-address=10.10.20.10
 add action=accept chain=forward comment="Allow MAIN to initiate sessions to IoT" in-interface=VLAN20_MAIN out-interface=VLAN30_IOT
+add action=accept chain=forward comment="Allow TV reverse UDP clock sync for AirPlay" dst-address=10.10.20.10 dst-port=49152-65535 in-interface=VLAN30_IOT out-interface=VLAN20_MAIN protocol=udp src-address=<RESERVED_IOT_TV_IP>
 add action=accept chain=forward comment="Allow Admin Workstation full access to MGMT" in-interface=VLAN20_MAIN out-interface=VLAN10_MGMT src-address=10.10.20.10
 add action=accept chain=forward comment="Allow WireGuard client access to MAIN VLAN" in-interface=wireguard-vpn out-interface=VLAN20_MAIN src-address=10.10.99.2
 

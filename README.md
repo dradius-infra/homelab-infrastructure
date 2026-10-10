@@ -5,13 +5,11 @@
 * **Author:** dradius
 * **Environment:** Production Homelab & Security Architecture
 * **Framework:** Zero-Trust Micro-segmentation & Defense-in-Depth
-* **Status:** Production-Hardened
+* **Status:** Active Homelab
 
 ---
 
 ## 2. High-Level Architecture Overview
-
-![Network Topology](assets/network-topology.jpeg)
 
 * **Primary Function:** Segmented SOHO Infrastructure, Observability Telemetry & Isolated Hypervisor Lab
 * **Topology Type:** Router-on-a-Stick / 802.1Q Hardware Bridge VLAN Filtering
@@ -41,9 +39,12 @@
 **Management Interface:** 10.10.10.1/27
 
 * **Port ether1:** Uplink to ISP Gateway LAN (Subnet: 192.168.1.0/24 - Outbound Masquerade NAT)
-* **Port ether2:** Access Port (`pvid=10` - Out-of-Band MGMT Fallback, `admit-only-untagged-and-priority-tagged`)
-* **Port ether3:** Access Port (`pvid=20` - Trusted Workstation Port, `admit-only-untagged-and-priority-tagged`)
-* **Port ether4:** Access Port (`pvid=30` - Isolated IoT Access, `admit-only-untagged-and-priority-tagged`)
+* **Port ether2:** Access Port (`pvid=10`Out-of-Band MGMT Fallback,
+`admit-only-untagged-and-priority-tagged`)
+* **Port ether3:** Access Port (`pvid=20`Trusted Workstation Port,
+`admit-only-untagged-and-priority-tagged`)
+* **Port ether4:** Access Port (`pvid=30`Isolated IoT Access,
+`admit-only-untagged-and-priority-tagged`)
 * **Port ether5:** 802.1Q Inter-Switch Trunk Uplink (`admit-only-vlan-tagged`, Tagged: VLAN 10, 20, 30, 40, 50)
 * **Port SFP1:** Reserved / Inactive
 
@@ -52,9 +53,9 @@
 **Management Interface:** 10.10.10.2/27
 
 * **Port 1:** 802.1Q Trunk Uplink to Core Router (`ether5`)
-* **Port 2:** Access Port (`PVID 10` - MGMT Secondary)
-* **Port 3 - 4:** Access Ports (`PVID 20` - Trusted Workstations)
-* **Port 5 - 6:** Access Ports (`PVID 30` - IoT Infrastructure)
+* **Port 2:** Access Port (`PVID 10`MGMT Secondary)
+* **Port 3 - 4:** Access Ports (`PVID 20`Trusted Workstations)
+* **Port 5 - 6:** Access Ports (`PVID 30`IoT Infrastructure)
 * **Port 7:** 802.1Q Trunk to Hypervisor Host (Tagged: VLAN 10, 20, 30, 40, 50)
 * **Port 8:** 802.1Q Trunk Downlink to Access Point (Tagged: VLAN 10, 20, 30, 50)
 
@@ -71,8 +72,6 @@ Core routing and infrastructure appliances are protected by a centralized Uninte
 * **Estimated Runtime:**
 * **Full Operational Load (~140W):** ~18–25 minutes
 * **Network-Only Essential Load (~40W):** ~55–70 minutes
-
-
 
 ---
 
@@ -115,6 +114,7 @@ Core routing and infrastructure appliances are protected by a centralized Uninte
 * **10.10.10.5:** Dedicated DNS Sinkhole (Pi-hole Service)
 * **10.10.10.10:** NetFlow / Observability Collector (ntopng)
 * **10.10.20.10:** Authorized Management Workstation (Bound Static ARP)
+* **`<RESERVED_IOT_TV_IP>`:** Dedicated Smart TV (Static DHCP Lease - BIA)
 
 ---
 
@@ -135,28 +135,25 @@ Core routing and infrastructure appliances are protected by a centralized Uninte
 To prevent network-wide blackholing during DNS outages, the Core Router implements automated Layer 7 health monitoring:
 
 1. **Active Filtering State:**
+
 * Client subnets are configured via DHCP to query their respective local gateway (`10.10.X.1`).
 * Destination NAT rules force all internal UDP/TCP port 53 traffic to the internal sinkhole (`10.10.10.5`).
 * Hairpin NAT masquerading is strictly constrained to `10.10.10.0/27`, preserving native client source IPs on all inter-VLAN DNS traffic for per-host logging.
 
-
 2. **Automated L7 Health Probe:**
+
 * Netwatch performs Layer 7 health checks every 10 seconds against port 53 (`type=tcp-conn port=53 timeout=1s`).
 
-
 3. **Failover Execution (Sinkhole Failure):**
+
 * If TCP connection establishment fails:
 * Upstream resolvers dynamically shift to public recursive servers (`1.1.1.1`, `8.8.8.8`).
 * Destination NAT redirection rules are automatically disabled.
 * Direct outbound DNS resolution to the WAN interface is permitted to sustain connectivity.
 
-
-
-
 4. **State Restoration (Failback):**
+
 * Upon successful TCP socket connection, redirection rules re-enable and filtering resumes automatically.
-
-
 
 ---
 
@@ -175,6 +172,7 @@ To prevent network-wide blackholing during DNS outages, the Core Router implemen
 | **10.10.20.0/26 (MAIN)** | 10.10.10.4 (Proxmox) | TCP `<PROXMOX_SERVICES_PORTS>` | **ACCEPT** | Hypervisor administration (SSH, Web UI, API) |
 | **10.10.20.10 (Admin)** | VLAN 40 (LAB) | ICMP (Ping) | **ACCEPT** | Administrative reachability diagnostics |
 | **VLAN 20 (MAIN)** | VLAN 30 (IOT) | ANY | **ACCEPT** | Unidirectional session initiation (Media, Control) |
+| **`<RESERVED_IOT_TV_IP>`** | 10.10.20.10 (Admin) | UDP 49152-65535 | **ACCEPT** | AirPlay reverse clock & media stream synchronization |
 | **10.10.20.10 (Admin)** | VLAN 10 (MGMT) | ANY | **ACCEPT** | Direct workstation access to management infrastructure |
 | **10.10.99.2 (VPN Mac)** | VLAN 20 (MAIN) | ANY | **ACCEPT** | Remote ingress restricted strictly to MAIN workstation zone |
 | **VLAN 50 (GUEST)** | INTERNAL_VLANS | ANY | **DROP** | Explicit quarantine from all private resources |
@@ -183,13 +181,11 @@ To prevent network-wide blackholing during DNS outages, the Core Router implemen
 ### Router Ingress Protection (Input Chain)
 
 * **Drop Invalid:** Immediately discards malformed, corrupted, or out-of-order packets.
-* **Reconnaissance Suppression:** ICMP echo requests are permitted solely across `INTERNAL_VLANS`. External WAN ping sweeps receive no response.
+* **Reconnaissance Suppression:** ICMP echo requests are permitted solely across `INTERNAL_VLANS` with rate limiting. External WAN ping sweeps receive no response.
 * **Protocol Restraint:**
 * UDP 67 (DHCP) is restricted to `INTERNAL_VLANS`.
 * UDP/TCP 53 (DNS) is restricted to `INTERNAL_VLANS`.
 * Router management daemons (Winbox, SSH) are restricted at both firewall and service levels (`available-from`) strictly to trusted management subnets (`10.10.10.0/27`, `10.10.20.0/26`, `10.10.99.0/24`).
-
-
 * **VPN Termination:** Exposes only `<VPN_LISTEN_PORT>` (UDP) on the WAN interface for authenticated WireGuard handshakes.
 * **Default Drop Policy:** Silently discards all unmatched incoming traffic destined for the router host.
 
@@ -198,16 +194,17 @@ To prevent network-wide blackholing during DNS outages, the Core Router implemen
 ## 10. L2 Threat Mitigation & Anti-Spoofing Controls
 
 1. **Hardware Bridge VLAN Filtering:**
+
 * Default native VLAN 1 is deactivated across all trunk paths.
 * Access interfaces enforce `frame-types=admit-only-untagged-and-priority-tagged` with explicit PVIDs to prevent VLAN hopping.
 * Inter-switch uplinks enforce `frame-types=admit-only-vlan-tagged` to discard untagged frames.
 
-
 2. **Dynamic ARP Hardening (`arp=reply-only`):**
+
 * `VLAN20_MAIN` is configured with `arp=reply-only`.
 * The DHCP server dynamically populates authenticated IP leases into the router's ARP table (`add-arp=yes`).
 * Unauthorized static IP assignments fail ARP resolution, neutralizing IP spoofing vectors.
 
-
 3. **Neighbor Discovery Restriction:**
+
 * MNDP, CDP, and LLDP discovery protocols are restricted strictly to `INTERNAL_VLANS`, preventing topology disclosures toward the WAN and Guest networks.

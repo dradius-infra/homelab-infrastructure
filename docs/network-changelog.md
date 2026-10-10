@@ -85,3 +85,13 @@ Incident records, architectural overhauls, and security hardening on a RouterOS 
   * Configured reply-only ARP on the management interface to reduce the risk of unauthorized or incorrectly configured hosts using unassigned addresses.
   * Added token-bucket rate limits on ICMP traffic to limit excessive probing and unnecessary router load.
   * Disabled unencrypted management services (Telnet, FTP, plain API) and purged deprecated tunnel interfaces.
+
+---
+
+## 2026-10-10 — AirPlay Mirroring Black Screen & Reverse Sync Pinning
+
+* **Impact:** Workstation could discover the Smart TV via mDNS, but initiating Screen Mirroring stalled with a black screen and no audio stream.
+* **Root Cause:** AirPlay mirroring initiates control sessions forward from the client, but the receiver actively opens unsolicited reverse UDP clock/timing synchronization streams (NTP/PTP) back to the client over ephemeral ports. The strict default-deny forward policy dropped these inbound UDP datagrams.
+* **Resolution:**
+  * Created a static DHCP reservation bound to the Smart TV MAC address within the IoT segment.
+  * Added a pinhole forward filter rule admitting only reverse UDP sync datagrams (ports 49152–65535) from the reserved TV endpoint to the authorized workstation, preserving isolation across all other ports and protocols.
