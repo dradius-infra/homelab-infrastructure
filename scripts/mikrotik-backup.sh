@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# Script Name   : mikrotik-git-backup.sh
 # Description   : Automated, local-first MikroTik RouterOS Git backup script
 # Architecture  : Proxmox LXC -> SSH (Ed25519, Read-Only) -> Git Version Control
 # ==============================================================================
