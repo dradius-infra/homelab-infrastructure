@@ -36,7 +36,7 @@ add action=accept chain=forward comment="Allow Direct DNS to WAN when Pi-hole is
 add action=accept chain=forward comment="Allow WireGuard client full-tunnel Internet" in-interface=wireguard-vpn out-interface=ether1 src-address=10.10.99.2
 add action=accept chain=forward comment="Allow Internet to all internal VLANs" in-interface-list=INTERNAL_VLANS out-interface=ether1
 
-# Segmented Cross-VLAN Permissions (Least Privilege)
+# Segmented Cross-VLAN Permissions
 add action=accept chain=forward comment="Allow MAIN subnet ICMP to Proxmox Host" dst-address=10.10.10.4 in-interface-list=INTERNAL_VLANS out-interface=VLAN10_MGMT protocol=icmp src-address=10.10.20.0/26
 add action=accept chain=forward comment="Allow MAIN subnet to Proxmox Services" dst-address=10.10.10.4 dst-port=<PROXMOX_SERVICES_PORTS> in-interface-list=INTERNAL_VLANS out-interface=VLAN10_MGMT protocol=tcp src-address=10.10.20.0/26
 add action=accept chain=forward comment="Allow Admin Workstation ICMP to LAB" in-interface=VLAN20_MAIN out-interface=VLAN40_LAB protocol=icmp src-address=10.10.20.10
