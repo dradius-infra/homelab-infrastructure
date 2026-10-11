@@ -1,6 +1,6 @@
 /ip firewall filter
 
-# INPUT CHAIN (Router Hardening & Ingress)
+# INPUT CHAIN
 
 add action=accept chain=input comment="Accept established, related, untracked" connection-state=established,related,untracked
 add action=drop chain=input comment="Drop invalid packets" connection-state=invalid
@@ -15,7 +15,7 @@ add action=accept chain=input comment="Allow Out-of-Band MGMT access to router" 
 add action=drop chain=input comment="Drop all other input traffic"
 
 
-# FORWARD CHAIN (Inter-VLAN & Micro-segmentation)
+# FORWARD CHAIN
 
 # DNS Loop Prevention for Pi-hole
 add action=drop chain=forward comment="KILL PIHOLE SELF-LOOP UDP" dst-address=10.10.10.5 dst-port=53 protocol=udp src-address=10.10.10.5
