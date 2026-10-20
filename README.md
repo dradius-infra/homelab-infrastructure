@@ -2,7 +2,6 @@
 
 ## 1. Document Metadata
 
-* **Author:** dradius
 * **Environment:** Production Homelab & Security Architecture
 * **Framework:** Zero-Trust Micro-segmentation & Defense-in-Depth
 * **Status:** Active Homelab
